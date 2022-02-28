@@ -1,0 +1,219 @@
+//! The Computer Language Benchmarks Game
+//! https://salsa.debian.org/benchmarksgame-team/benchmarksgame/
+//!
+//! Contributed by Henry Jayakusuma
+//! Derived from C++ #6 multi-threaded implementation by Lew Palm
+//! Partially reusing code from Rust #4 by Ryohei Machida
+//!
+//! ```cargo
+//! [dependencies]
+//! rug = { version = "1.12.0", default-features = false, features = ["integer"] }
+//! ```
+
+extern crate rug;
+
+use rug::{Assign, Integer};
+use std::cmp;
+use std::io::Write;
+use std::sync::{Arc, RwLock};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU8, Ordering};
+use std::thread;
+
+pub fn multiplier_thread(
+    finished: Arc<AtomicBool>,
+    result: Arc<RwLock<Integer>>,
+    multiplier: Arc<AtomicU32>,
+    calculating_flag: Arc<AtomicBool>,
+) {
+    while !finished.load(Ordering::SeqCst) {
+        while !calculating_flag.load(Ordering::SeqCst) { thread::yield_now() }
+        { *result.write().unwrap() *= multiplier.load(Ordering::SeqCst); }
+        calculating_flag.store(false, Ordering::SeqCst);
+    }
+}
+
+pub struct Context {
+    q: Arc<RwLock<Integer>>,
+    q_multiplier: Arc<AtomicU32>,
+    r: Arc<RwLock<Integer>>,
+    t: Arc<RwLock<Integer>>,
+    t_multiplier: Arc<AtomicU32>,
+    q2: Integer,
+    k: u32,
+    digit: Arc<AtomicU8>,
+    finished: Arc<AtomicBool>,
+    q_multiplier_thread: Option<thread::JoinHandle<()>>,
+    q_calculating_flag: Arc<AtomicBool>,
+    t_multiplier_thread: Option<thread::JoinHandle<()>>,
+    t_calculating_flag: Arc<AtomicBool>,
+    extract_3_thread: Option<thread::JoinHandle<()>>,
+    extract_calculating_flag: Arc<AtomicBool>,
+}
+
+impl Context {
+    pub fn new() -> Context {
+        Context {
+            q: Arc::new(RwLock::new(Integer::from(1))),
+            q_multiplier: Arc::new(AtomicU32::new(0)),
+            r: Arc::new(RwLock::new(Integer::from(0))),
+            t: Arc::new(RwLock::new(Integer::from(1))),
+            t_multiplier: Arc::new(AtomicU32::new(0)),
+            q2: Integer::from(0),
+            k: 0,
+            digit: Arc::new(AtomicU8::new(0)),
+            finished: Arc::new(AtomicBool::new(false)),
+            q_multiplier_thread: None,
+            q_calculating_flag: Arc::new(AtomicBool::new(false)),
+            t_multiplier_thread: None,
+            t_calculating_flag: Arc::new(AtomicBool::new(false)),
+            extract_3_thread: None,
+            extract_calculating_flag: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    pub fn start(&mut self) {
+        self.finished.store(false, Ordering::SeqCst);
+
+        let finished = self.finished.clone();
+        let q = self.q.clone();
+        let q_multiplier = self.q_multiplier.clone();
+        let calculating_flag = self.q_calculating_flag.clone();
+        self.q_multiplier_thread = Some(thread::spawn(move ||
+            multiplier_thread(finished, q, q_multiplier, calculating_flag)
+        ));
+
+        let finished = self.finished.clone();
+        let t = self.t.clone();
+        let t_multiplier = self.t_multiplier.clone();
+        let calculating_flag = self.t_calculating_flag.clone();
+        self.t_multiplier_thread = Some(thread::spawn(move ||
+            multiplier_thread(finished, t, t_multiplier, calculating_flag)
+        ));
+
+        let finished = self.finished.clone();
+        let q = self.q.clone();
+        let r = self.r.clone();
+        let t = self.t.clone();
+        let digit = self.digit.clone();
+        let calculating_flag = self.extract_calculating_flag.clone();
+        self.extract_3_thread = Some(thread::spawn(move || {
+            let mut result = Integer::new();
+            while !finished.load(Ordering::SeqCst) {
+                while !calculating_flag.load(Ordering::SeqCst) { thread::yield_now() }
+                { result.assign(&*q.read().unwrap() * 3); }
+                { result += &*r.read().unwrap(); }
+                { result /= &*t.read().unwrap(); }
+                digit.store(result.to_u8().unwrap(), Ordering::SeqCst);
+                calculating_flag.store(false, Ordering::SeqCst);
+            }
+        }));
+    }
+
+    pub fn stop(&mut self) {
+        self.finished.store(true, Ordering::SeqCst);
+        self.q_calculating_flag.store(true, Ordering::SeqCst);
+        self.t_calculating_flag.store(true, Ordering::SeqCst);
+        self.extract_calculating_flag.store(true, Ordering::SeqCst);
+        self.q_multiplier_thread.take().unwrap().join().unwrap();
+        self.t_multiplier_thread.take().unwrap().join().unwrap();
+        self.extract_3_thread.take().unwrap().join().unwrap();
+    }
+
+    pub fn simplify(&mut self) {
+        let gcd = self.q.read().unwrap().clone()
+            .gcd(&*self.r.read().unwrap())
+            .gcd(&*self.t.read().unwrap());
+        self.q.write().unwrap().div_exact_mut(&gcd);
+        self.r.write().unwrap().div_exact_mut(&gcd);
+        self.t.write().unwrap().div_exact_mut(&gcd);
+    }
+
+    pub fn next(&mut self) -> u8 {
+        let mut extract4 = Integer::new();
+        let mut t_dig = Integer::new();
+        loop {
+            self.next_term();
+
+            while self.q_calculating_flag.load(Ordering::SeqCst) { thread::yield_now() }
+            if *self.q.read().unwrap() > *self.r.read().unwrap() { continue; }
+
+            while self.t_calculating_flag.load(Ordering::SeqCst) { thread::yield_now() }
+            self.extract_calculating_flag.store(true, Ordering::SeqCst);
+            { extract4.assign(&*self.q.read().unwrap() << 2); }
+            { extract4 += &*self.r.read().unwrap(); }
+            { extract4 /= &*self.t.read().unwrap(); }
+            let digit2 = extract4.to_u8().unwrap();
+            while self.extract_calculating_flag.load(Ordering::SeqCst) { thread::yield_now() }
+            if self.digit.load(Ordering::SeqCst) != digit2 { continue; }
+
+            self.q_multiplier.store(10, Ordering::SeqCst);
+            self.q_calculating_flag.store(true, Ordering::SeqCst);
+
+            {
+                t_dig.assign(&*self.t.read().unwrap() * digit2);
+                *self.r.write().unwrap() -= &t_dig;
+                *self.r.write().unwrap() *= 10;
+            }
+
+            return digit2;
+        }
+    }
+
+    fn next_term(&mut self) {
+        self.k += 1;
+        let k2 = self.k * 2 + 1;
+
+        while self.q_calculating_flag.load(Ordering::SeqCst) { thread::yield_now() }
+        { self.q2.assign(&*self.q.read().unwrap() << 1); }
+        self.q_multiplier.store(self.k, Ordering::SeqCst);
+        self.q_calculating_flag.store(true, Ordering::SeqCst);
+
+        {
+            *self.r.write().unwrap() += &self.q2;
+            *self.r.write().unwrap() *= k2;
+        }
+
+
+        while self.t_calculating_flag.load(Ordering::SeqCst) { thread::yield_now() }
+        self.t_multiplier.store(k2, Ordering::SeqCst);
+        self.t_calculating_flag.store(true, Ordering::SeqCst);
+    }
+}
+
+fn main() {
+    let n: usize = std::env::args_os()
+        .nth(1)
+        .and_then(|s| s.into_string().ok())
+        .and_then(|n| n.parse().ok())
+        .unwrap_or(27);
+
+    let mut ctx = Context::new();
+    ctx.start();
+
+    // line buffer
+    let mut line_buf = [0u8; 12];
+    line_buf[10] = b'\t';
+    line_buf[11] = b':';
+
+    // output buffer
+    let mut output = Vec::with_capacity(n * 2);
+
+    for d in (0..n).step_by(10) {
+        // if (d > 0) && (d % 1000 == 0) { ctx.simplify(); }
+        let count = cmp::min(10, n - d);
+
+        for i in 0..count {
+            line_buf[i] = b'0' + ctx.next();
+        }
+
+        for i in count..10 {
+            line_buf[i] = b' ';
+        }
+
+        output.extend_from_slice(&line_buf);
+        let _ = writeln!(output, "{}", d + count);
+    }
+
+    let _ = std::io::stdout().write_all(&*output);
+    ctx.stop();
+}

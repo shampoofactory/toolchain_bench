@@ -1,0 +1,205 @@
+# Hyperfine flags
+hyperfine: "--warmup 5"
+# RUSTFLAGS environment variable
+rustflags: '-C target-cpu=native'
+# Root manifest: 'Cargo.toml'
+# Merge replaced with child (group) manifests.
+# Note the Yaml equivalent Toml bindings.
+manifest:
+  package:
+    edition: "2021"
+    version: "0.1.0"
+  dependencies:
+  profile:
+    release:
+      codegen-units: 1
+      lto: "fat"
+      opt-level: 3
+# Groups tie together dependencies and sources.
+groups:
+  - group:
+      manifest:
+        package:
+          edition: "2015"
+          name: "empty"
+      sources:
+          - empty.rs
+  - group:
+      manifest:
+        package:
+          edition: "2015"
+          name: "binarytrees"
+        dependencies:
+          bumpalo: "3.9"
+          rayon: "1.5"
+          toolshed: "0.8"
+          typed-arena: "2.0"
+      args: "21"
+      sources:
+          - binarytrees.rust
+          - binarytrees.rust-2.rust
+          - binarytrees.rust-3.rust
+          - binarytrees.rust-4.rust
+          - binarytrees.rust-5.rust
+  - group:
+      manifest:
+        package:
+          edition: "2015"
+          name: "fannkuchredux"
+        dependencies:
+          rayon: "1.5"
+      args: "12"
+      sources:
+          - fannkuchredux.rust-2.rust
+          - fannkuchredux.rust-3.rust
+          - fannkuchredux.rust-4.rust
+          - fannkuchredux.rust-5.rust
+          - fannkuchredux.rust-6.rust
+  - group:
+      manifest:
+        package:
+          edition: "2015"
+          name: "fasta"
+        dependencies:
+          num_cpus: "1.13"
+          spin: "0.9"
+      args: "25000000"
+      sources:
+        - fasta.rust
+        - fasta.rust-2.rust
+        - fasta.rust-3.rust
+        - fasta.rust-4.rust
+        - fasta.rust-5.rust
+        - fasta.rust-6.rust
+        - fasta.rust-7.rust
+  - group:
+      manifest:
+        package:
+          edition: "2015"
+          name: "knucleotide"
+        dependencies:
+          fnv: "1.0"
+          futures: "0.1"
+          futures-cpupool: "0.1"
+          fxhash: "0.2"
+          hashbrown: "0.12"
+          indexmap: "1.8"
+          itertools: "0.10"
+          num: "0.4.0"
+          num_cpus: "1.13"
+          num-traits: "0.2"
+          scoped_threadpool: "0.1"
+          tokio-threadpool: "0.1"
+      data: "knucleotide-input25000000.txt"
+      sources:
+        - knucleotide.rust
+        - knucleotide.rust-2.rust
+        - knucleotide.rust-4.rust
+        - knucleotide.rust-5.rust
+        - knucleotide.rust-6.rust
+        - knucleotide.rust-7.rust
+        - knucleotide.rust-8.rust
+        - knucleotide.rust-9.rust
+  - group:
+      manifest:
+        package:
+          edition: "2015"
+          name: "mandelbrot"
+        dependencies:
+          futures: "0.1"
+          futures-cpupool: "0.1"
+          generic-array: "0.14"
+          numeric-array: "0.5"
+          num-traits: "0.2"
+          rayon: "1.5"
+      args: "16000"
+      sources:
+        - mandelbrot.rust
+        - mandelbrot.rust-3.rust
+        - mandelbrot.rust-5.rust
+        - mandelbrot.rust-6.rust
+        - mandelbrot.rust-7.rust
+        - mandelbrot.rust-8.rust
+  - group:
+      manifest:
+        package:
+          edition: "2015"
+          name: "nbody"
+        dependencies:
+      args: "50000000"
+      sources:
+        - nbody.rust
+        - nbody.rust-2.rust
+        - nbody.rust-3.rust
+        - nbody.rust-4.rust
+        - nbody.rust-5.rust
+        - nbody.rust-6.rust
+        - nbody.rust-7.rust
+        - nbody.rust-8.rust
+        - nbody.rust-9.rust
+  - group:
+      manifest:
+        package:
+          edition: "2015"
+          name: "pidigits"
+        dependencies:
+          rug: "1.15"
+      args: "10000"
+      sources:
+          - pidigits.rust
+          - pidigits.rust-2.rust
+          - pidigits.rust-3.rust
+          - pidigits.rust-4.rust
+          - pidigits.rust-6.rust
+  - group:
+      manifest:
+        package:
+          edition: "2015"
+          name: "regexredux"
+        dependencies:
+          crossbeam-utils: "0.8"
+          libc: "0.2"
+          pcre2: "0.2"
+          pcre2-sys: "0.2"
+          regex: "1.5"
+          rayon: "1.5"
+      data: "regexredux-input5000000.txt"
+      sources:
+        - regexredux.rust
+        - regexredux.rust-2.rust
+        - regexredux.rust-3.rust
+        - regexredux.rust-4.rust
+        - regexredux.rust-5.rust
+        - regexredux.rust-6.rust
+        - regexredux.rust-7.rust
+  - group:
+      manifest:
+        package:
+          edition: "2015"
+          name: "revcomp"
+        dependencies:
+          memchr: "2.4"
+          rayon: "1.5"
+      data: "revcomp-input100000000.txt"
+      sources:
+        - revcomp.rust
+        - revcomp.rust-2.rust
+        - revcomp.rust-3.rust
+  - group:
+      manifest:
+        package:
+          edition: "2015"
+          name: "spectralnorm"
+        dependencies:
+          rayon: "1.5"
+          generic-array: "0.14"
+          numeric-array: "0.5"
+      args: "5500"
+      sources:
+        - spectralnorm.rust
+        - spectralnorm.rust-2.rust
+        - spectralnorm.rust-3.rust
+        - spectralnorm.rust-4.rust
+        - spectralnorm.rust-5.rust
+        - spectralnorm.rust-6.rust
+        - spectralnorm.rust-7.rust
