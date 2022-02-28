@@ -1,5 +1,5 @@
 # toolchain_bench
-Benchmark identical Rust code built with different rustup tool chains using the [The Computer Language Benchmarks Game](https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html) benchmark programs and [hyperfine](https://github.com/sharkdp/hyperfine).
+Benchmark and compare `rustup` toolchain executable performance using [The Computer Language Benchmarks Game](https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html) benchmarks and [hyperfine](https://github.com/sharkdp/hyperfine).
 
 
 ## Prerequisites
@@ -16,7 +16,7 @@ Hyperfine:
 $ sudo apt install hyperfine
 ```
 
-Rust/ rustup configured with the correct tool chains.
+Rust/ `rustup` configured with the correct tool chains.
 E.g.
 ```
 $ rustup install 1.58.1
@@ -35,30 +35,28 @@ $ python3 bench.py stable nightly
 This will build, benchmark and output a statistical analysis.
 
 
-Alternatively, assuming rustup has been configured with '1.58.1' and a modified variant '1.58.1.revert':
+Alternatively, assuming `rustup` has been configured with `1.58.1` and a modified variant `1.58.1.revert`:
 ```
 $ python3 bench.py 1.58.1 1.58.1.revert
 ```
-
-Note that bench.py, or more specifically build.py, will not rebuild binaries that already exist in 'my_bin/{toolchain}'.
-This will give stale binaries when passing non-specific 'stable'/ 'nightly'/ 'local_build' type arguments and the underlying toolchain changes. To fix this, simply delete the corresponding 'my_bin/{toolchain}' folder e.g. 'my_bin/nightly'.
+**Important!** To cut down on rebuild times, `bench.py`, or more specifically `build.py`, will not rebuild binaries that already exist in the corresponding my_bin/{toolchain} folder. To force a rebuild pass the TODO
 
 
 ## Phases
 
 There are four phases to generated benchmarks.
 
-- Data (data.py), generate input data for benchmarks. Cached.
-- Build (build.py), build rust executables into 'my_bin'. Cached.
-- Benchmark (hyper.py), benchmark using [hyperfine](https://github.com/sharkdp/hyperfine) and output to 'my_results/outputs.json'
-- Statistical analysis (welch.py), Welch's t-test based on [this](https://github.com/sharkdp/hyperfine/blob/master/scripts/welch_ttest.py) hyperfine script.
+- Data (`data.py`), generate input data for benchmarks. Cached.
+- Build (`build.py`), build rust executables into `my_bin`. Cached.
+- Benchmark (`hyper.py`), benchmark using [hyperfine](https://github.com/sharkdp/hyperfine) and output to `my_results/outputs.json`
+- Statistical analysis (`welch.py`), Welch's t-test based on [this](https://github.com/sharkdp/hyperfine/blob/master/scripts/welch_ttest.py) hyperfine script.
 
 
 ## Analysis
 
 This implementation currently only provides a simple Welch's t-test.
 
-The benchmark output data is saved in 'my_results/outputs.json'. The data is organised as 'group'.'source'.'toolchain'.'results'.
+The benchmark output data is saved in `my_results/outputs.json`. The data is organised as `group.source.toolchain.results`.
 
 Example:
 ```json
