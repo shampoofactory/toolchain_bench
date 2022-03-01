@@ -32,13 +32,30 @@ Compare `1.58.0` and `1.58.1`:
 $ python3 bench.py 1.58.0 1.58.1
 ```
 
-This will build, benchmark and output results.
+This will build, benchmark and output results:
+```
+                                1.58.1               1.58.1.revert    
+executable                      relative   median    relative   median    significant
+-------------------------------------------------------------------------------------
+empty.rs                        1.042      0.001s    1.000      0.001s    T    0.000p
+binarytrees.rust                1.005      2.268s    1.000      2.257s    F    0.315p
+binarytrees.rust-2.rust         1.014      1.221s    1.000      1.204s    F    0.351p
+.
+.
+.
+spectralnorm.rust-7.rust        1.000      1.025s    1.000      1.025s    F    0.498p
+
+Summary:
+  test count: 63
+  discarded (insignificant) tests: 43
+  1.58.1 fastest: 12 times
+  1.58.1.revert fastest: 8 times
+```
 
 To output the results without running the benchmarks again:
 ```
 python3 welch.py 1.58.0 1.58.1
 ```
-
 
 Alternatively, assuming `rustup` has been configured with `1.58.1` and a modified variant `1.58.1.revert`:
 ```
