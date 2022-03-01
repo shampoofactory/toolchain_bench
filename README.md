@@ -138,7 +138,7 @@ Configuration is via 'config.yaml'.
 
 ## The Computer Language Benchmarks Game
 
-'The Computer Language Benchmarks Game' homepage is [here](ttps://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html) with the project repo [here](https://salsa.debian.org/benchmarksgame-team/benchmarksgame).
+'The Computer Language Benchmarks Game' homepage is [here](https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html) with the project repo [here](https://salsa.debian.org/benchmarksgame-team/benchmarksgame).
 
 I am in no way affiliated with the 'The Computer Language Benchmarks Game'. All trademarks belong to their respective owners.
 
