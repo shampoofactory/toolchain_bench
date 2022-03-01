@@ -6,9 +6,6 @@ import sys
 
 from welch import Welch
 
-# TODO remove me
-from scipy import stats
-
 
 class Sleep:
 
@@ -51,6 +48,7 @@ def execute(time_a, time_b, result_dir='my_results', flags='--warmup 1',
 
 def main():
     """Sleep comparison test.
+    $ python3 test.py 1 2
     """
     parser = ArgumentParser()
     parser.add_argument('times', nargs=2, help='sleep times in seconds')

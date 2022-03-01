@@ -7,12 +7,11 @@ from benchmarks import fasta
 
 
 def write(path, n):
-    global write
     if Path(path).exists():
         print(f'data: target exists: {path}')
     else:
         print(f'data: generate {n} -> {path}')
-        with open(path, 'w') as file:
+        with open(path, 'w', encoding='UTF8') as file:
             with redirect_stdout(file):
                 fasta.execute(n)
 
@@ -29,7 +28,7 @@ def main():
     """Build benchmark input data
     """
     parser = ArgumentParser()
-    args = parser.parse_args()
+    _ = parser.parse_args()
 
     execute()
 
