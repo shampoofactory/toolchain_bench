@@ -16,7 +16,7 @@ Hyperfine:
 $ sudo apt install hyperfine
 ```
 
-Rust/ `rustup` configured with the correct tool chains.
+`rustup` configured with the correct tool chains.
 E.g.
 ```
 $ rustup install 1.58.1
@@ -27,29 +27,37 @@ $ rustup toolchain link {my-toolchain} {path/to/my/toolchain/sysroot}
 
 ## Quick start
 
-Compare stable and nightly:
+Compare `1.58.0` and `1.58.1`:
 ```
-$ python3 bench.py stable nightly
+$ python3 bench.py 1.58.0 1.58.1
 ```
 
-This will build, benchmark and output a statistical analysis.
+This will build, benchmark and output results.
+
+To output the results without running the benchmarks again:
+```
+python3 welch.py 1.58.0 1.58.1
+```
 
 
 Alternatively, assuming `rustup` has been configured with `1.58.1` and a modified variant `1.58.1.revert`:
 ```
 $ python3 bench.py 1.58.1 1.58.1.revert
 ```
-**Important!** To cut down on rebuild times, `bench.py`, or more specifically `build.py`, will not rebuild binaries that already exist in the corresponding my_bin/{toolchain} folder. To force a rebuild pass the TODO
+
+**Important!** To cut down on rebuild times, `bench.py`, or more specifically `build.py`, will not rebuild binaries that already exist in the corresponding `my_bin/{toolchain}` folder. To force a rebuild simply remove the relevant `my_bin/{toolchain}` folder.
 
 
-## Phases
+## Breakdown
 
-There are four phases to generated benchmarks.
+Four commands are invoked by `bench.py` in order:
 
-- Data (`data.py`), generate input data for benchmarks. Cached.
-- Build (`build.py`), build rust executables into `my_bin`. Cached.
+- Data (`data.py`), generate input data for benchmarks. This data is cached.
+- Build (`build.py`), build rust executables into `my_bin`. These binaries are cached. To force a rebuild simply remove the relevant `my_bin/{toolchain}` folder.
 - Benchmark (`hyper.py`), benchmark using [hyperfine](https://github.com/sharkdp/hyperfine) and output to `my_results/outputs.json`
-- Statistical analysis (`welch.py`), Welch's t-test based on [this](https://github.com/sharkdp/hyperfine/blob/master/scripts/welch_ttest.py) hyperfine script.
+- Analysis (`welch.py`), Welch's t-test based on [this](https://github.com/sharkdp/hyperfine/blob/master/scripts/welch_ttest.py) hyperfine script.
+
+These can also be called individually.
 
 
 ## Analysis
