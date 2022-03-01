@@ -28,7 +28,7 @@ class Bencher:
         if args:
             command += f' {args}'
         if data:
-            # Unix type only
+            # *nix only
             command += f' < {Path(self.data_dir, data)}'
         cmd =\
             f'hyperfine'\

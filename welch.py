@@ -17,27 +17,32 @@ class Welch:
         self.top_b = 0
         self.discard = 0
 
-    def describe(self):
-        print('Columns:')
-        print('  0: executable')
-        print('  1: ratio[T|F*] where T: significant, F: not significant')
-        print('  2: toolchain a median time (seconds)')
-        print('  3: toolchain b median time (seconds)')
-        print('  4: p-value*')
-        print('Where:')
-        print(f'  *: Welch t-test, p: {self.threshold}')
-
     def summary(self):
         print('Summary:')
         print(f'  test count: {self.count}')
         print(f'  discarded (insignificant) tests: {self.discard}')
-        print(f'  toolchain a fastest: {self.top_a} times')
-        print(f'  toolchain b fastest: {self.top_b} times')
+        print(f'  {self.toolchain_a} fastest: {self.top_a} times')
+        print(f'  {self.toolchain_b} fastest: {self.top_b} times')
+
+    def header(self):
+        print(f'{"":<32}'
+              f'{self.toolchain_a:<17}'
+              '    '
+              f'{self.toolchain_b:<17}')
+
+        print(f'{"executable":<32}'
+              f'{"relative":<8}'
+              f'{"median":>9}'
+              '    '
+              f'{"relative":<8}'
+              f'{"median":>9}'
+              '    '
+              f'significant')
+        print('-' * 85)
 
     def test(self, program, res_a, res_b):
         median_a, median_b = res_a['median'], res_b['median']
-        times_a, times_b = res_a['times'], res_a['times']
-        ratio = median_a / median_b
+        times_a, times_b = res_a['times'], res_b['times']
 
         _, p = stats.ttest_ind(times_a, times_b, equal_var=False)
         dispose = p < self.threshold
@@ -53,24 +58,29 @@ class Welch:
             self.top_a += 1
             self.top_b += 1
 
+        rel_a, rel_b = (
+            median_a / median_b, 1.0) if median_a > median_b else (1.0, median_b / median_a)
+
         print(f'{program:<32}'
-              f'{ratio:8.3f}'
-              f'{"T" if dispose else "F"} '
+              f'{rel_a:<8.3f}'
               f'{median_a:8.3f}s'
+              '    '
+              f'{rel_b:<8.3f}'
               f'{median_b:8.3f}s'
+              '    '
+              f'{"T" if dispose else "F"} '
               f'{p:8.3f}p')
 
 
 def execute_all(results, toolchain_a, toolchain_b, threshold=0.05):
     welch = Welch(toolchain_a, toolchain_b, threshold)
+    welch.header()
     for _, data in results.items():
         for program, groups in data.items():
             set_a, set_b = groups[toolchain_a], groups[toolchain_b]
             res_a, res_b = set_a['results'][0], set_b['results'][0]
             welch.test(program, res_a, res_b)
 
-    print('')
-    welch.describe()
     print('')
     welch.summary()
 
